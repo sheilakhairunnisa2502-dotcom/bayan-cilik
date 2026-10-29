@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account profile for students and admin",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "avatar": { "type": "string", "maxLength": 20 },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "stars": { "type": "number" },
+        "score": { "type": "number" },
+        "level": { "type": "number" },
+        "completedQuizzes": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "email", "displayName", "role"]
+    },
+    "ScoreRecord": {
+      "title": "Score Record",
+      "description": "Individual game score record for a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "gameType": { "type": "string", "maxLength": 64 },
+        "score": { "type": "number" },
+        "starsEarned": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "gameType", "score", "starsEarned"]
+    },
+    "CustomVocab": {
+      "title": "Custom Vocabulary",
+      "description": "Vocabulary items created by the admin teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "arabic": { "type": "string", "maxLength": 100 },
+        "latin": { "type": "string", "maxLength": 100 },
+        "indonesian": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "maxLength": 50 },
+        "emoji": { "type": "string", "maxLength": 20 },
+        "makhrajTip": { "type": "string", "maxLength": 250 },
+        "authorId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "arabic", "latin", "indonesian", "category", "authorId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Root user profile document"
+    },
+    "/users/{userId}/scores/{scoreId}": {
+      "schema": "ScoreRecord",
+      "description": "Scores and stars achieved by the specific user"
+    },
+    "/custom_vocab/{vocabId}": {
+      "schema": "CustomVocab",
+      "description": "Additional learning vocabulary created by admin"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Al-Bayan Cilik - Game Bahasa Arab Interaktif",
+  "description": "Aplikasi permainan dan pembelajaran Bahasa Arab interaktif untuk anak SD dengan audio suara, gambar ceria, kuis game, dan modul guru/admin.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

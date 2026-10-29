@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email == 'sheilakhairunnisa2502@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for User Profile document
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'displayName', 'role']) &&
+        data.keys().hasOnly(['userId', 'email', 'displayName', 'avatar', 'role', 'stars', 'score', 'level', 'completedQuizzes', 'updatedAt']) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.userId == request.auth.uid &&
+        data.email is string && data.email.size() <= 256 &&
+        data.displayName is string && data.displayName.size() <= 100 &&
+        (data.role in ['student', 'admin']);
+    }
+
+    // Validation for User Score Record
+    function isValidScore(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'gameType', 'score', 'starsEarned']) &&
+        data.keys().hasOnly(['id', 'userId', 'gameType', 'score', 'starsEarned', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == userId &&
+        data.gameType is string && data.gameType.size() <= 64 &&
+        data.score is number && data.score >= 0 &&
+        data.starsEarned is number && data.starsEarned >= 0;
+    }
+
+    // Validation for Custom Vocabulary
+    function isValidCustomVocab(data) {
+      return data.keys().hasAll(['id', 'arabic', 'latin', 'indonesian', 'category', 'authorId']) &&
+        data.keys().hasOnly(['id', 'arabic', 'latin', 'indonesian', 'category', 'emoji', 'makhrajTip', 'authorId']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.arabic is string && data.arabic.size() <= 100 &&
+        data.latin is string && data.latin.size() <= 100 &&
+        data.indonesian is string && data.indonesian.size() <= 150 &&
+        data.category is string && data.category.size() <= 50 &&
+        data.authorId is string && data.authorId == request.auth.uid;
+    }
+
+    // User document rules: strictly owned by the user
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) &&
+        isValidUser(request.resource.data) &&
+        request.resource.data.userId == resource.data.userId;
+      allow delete: if isAdmin();
+
+      // Subcollection: scores under user's document
+      match /scores/{scoreId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidScore(request.resource.data, userId);
+        allow update: if isOwner(userId) &&
+          isValidScore(request.resource.data, userId) &&
+          request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Custom vocabulary: readable by authenticated users, writable only by verified admin
+    match /custom_vocab/{vocabId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidCustomVocab(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidCustomVocab(request.resource.data) &&
+        request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
+    }
+  }
+}
